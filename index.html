@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMI AUTO DRIVE</title>
+
+<style>
+:root {
+--primary:#1e3a8a; --accent:#fbbf24; --success:#22c55e;
+--danger:#ef4444; --bg:#f1f5f9; --card:#ffffff; --text:#1e293b;
+}
+body {font-family:Arial;background:var(--bg);margin:0}
+.hidden{display:none}
+
+/* LOGIN */
+.login-screen{height:100vh;display:flex;justify-content:center;align-items:center;background:#1e3a8a}
+.login-card{background:white;padding:30px;border-radius:20px;width:300px;text-align:center}
+input{width:100%;padding:10px;margin:10px 0}
+button{padding:10px;width:100%}
+
+/* EXAM */
+.header{background:var(--primary);color:white;padding:10px;display:flex;justify-content:space-between}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);background:white}
+.q-card{background:white;margin:10px;padding:15px;border-radius:10px}
+.opt-btn{width:100%;padding:10px;margin:5px 0}
+.footer{position:fixed;bottom:0;width:100%;display:flex}
+.btn{flex:1;padding:10px}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="login-screen">
+<div class="login-card">
+<h2>GAMI DRIVE</h2>
+<input id="stu-name" placeholder="Nume">
+<input id="stu-code" type="password" placeholder="Cod">
+<button onclick="auth()">LOGIN</button>
+</div>
+</div>
+
+<!-- EXAM -->
+<div id="screen-exam" class="hidden">
+<div class="header">
+<div id="user-tag"></div>
+<div id="timer">30:00</div>
+</div>
+
+<div class="stats-grid">
+<div>Rămase <span id="s-rem">26</span></div>
+<div>Corecte <span id="s-cor">0</span></div>
+<div>Greșeli <span id="s-gre">0</span></div>
+<div>Scor <span id="s-perc">0%</span></div>
+</div>
+
+<div class="q-card">
+<div id="q-text"></div>
+<div id="opts-list"></div>
+</div>
+
+<div class="footer">
+<button class="btn" onclick="location.reload()">IEȘIRE</button>
+<button class="btn" onclick="handleAction()">CONFIRMĂ</button>
+</div>
+</div>
+
+<!-- ADMIN -->
+<div id="screen-admin" class="hidden">
+<h2>ADMIN</h2>
+<button onclick="addNewAccount()">+</button>
+<input id="new-adm-code">
+<button onclick="updateCloudCodes()">SALVEAZĂ</button>
+<div id="admin-grouped-content"></div>
+</div>
+
+<script>
+
+const DB_URL="https://gamiautodrive-default-rtdb.europe-west1.firebasedatabase.app/";
+
+let cor=0,gre=0,time=1800,timer,activePool=[],sel=[],studentName="";
+let examHistory=[];
+
+// 🔥 FETCH
+async function fetchJSON(path){
+let r=await fetch(DB_URL+path);
+return await r.json();
+}
+
+// 🔥 AUTH
+async function auth(){
+let name=document.getElementById("stu-name").value;
+let code=document.getElementById("stu-code").value;
+
+let settings=await fetchJSON("settings.json")||{adminCode:"999"};
+
+if(code===settings.adminCode){
+showAdmin();
+return;
+}
+
+let acc=await fetchJSON("accounts.json")||{};
+let user=Object.values(acc).find(x=>x.u===name && x.p===code);
+
+if(!user){alert("Greșit");return;}
+
+studentName=name;
+document.getElementById("screen-login").classList.add("hidden");
+document.getElementById("screen-exam").classList.remove("hidden");
+document.getElementById("user-tag").innerText=name;
+
+startExam();
+}
+
+// 🔥 EXAM
+function startExam(){
+cor=0;gre=0;time=1800;
+
+activePool=new Array(26).fill(0);
+
+timer=setInterval(()=>{
+time--;
+let m=Math.floor(time/60);
+let s=time%60;
+document.getElementById("timer").innerText=m+":"+(s<10?"0":"")+s;
+
+if(time<=0)finish("Timp expirat");
+},1000);
+
+loadQ();
+}
+
+function loadQ(){
+if(gre>=5) return finish("5 greșeli");
+if(activePool.length===0) return finish();
+
+document.getElementById("q-text").innerText="Întrebare";
+
+let div=document.getElementById("opts-list");
+div.innerHTML="";
+
+["A","B","C"].forEach(l=>{
+let b=document.createElement("button");
+b.className="opt-btn";
+b.innerText=l;
+b.onclick=()=>{sel=[l];};
+div.appendChild(b);
+});
+
+updateStats();
+}
+
+function handleAction(){
+if(sel.length===0) return alert("Alege");
+
+let ok=Math.random()<0.5;
+
+if(ok) cor++; else gre++;
+
+activePool.shift();
+sel=[];
+loadQ();
+}
+
+function updateStats(){
+document.getElementById("s-rem").innerText=activePool.length;
+document.getElementById("s-cor").innerText=cor;
+document.getElementById("s-gre").innerText=gre;
+document.getElementById("s-perc").innerText=Math.round((cor/26)*100)+"%";
+}
+
+async function finish(msg=""){
+clearInterval(timer);
+
+await fetch(DB_URL+"exams.json",{
+method:"POST",
+body:JSON.stringify({
+nume:studentName,
+scor:cor,
+greseli:gre,
+data:new Date().toLocaleString()
+})
+});
+
+if(cor>=22) alert("ADMIS "+cor);
+else alert("RESPINS "+cor);
+
+location.reload();
+}
+
+// 🔥 ADMIN
+async function showAdmin(){
+document.getElementById("screen-login").classList.add("hidden");
+document.getElementById("screen-admin").classList.remove("hidden");
+
+let acc=await fetchJSON("accounts.json")||{};
+let div=document.getElementById("admin-grouped-content");
+
+div.innerHTML=Object.keys(acc).map(id=>{
+let a=acc[id];
+return `<div>${a.u} (${a.p}) <button onclick="del('${id}')">X</button></div>`;
+}).join("");
+}
+
+async function addNewAccount(){
+let u=prompt("user");
+let p=prompt("pass");
+await fetch(DB_URL+"accounts.json",{method:"POST",body:JSON.stringify({u,p})});
+showAdmin();
+}
+
+async function del(id){
+await fetch(DB_URL+"accounts/"+id+".json",{method:"DELETE"});
+showAdmin();
+}
+
+async function updateCloudCodes(){
+let c=document.getElementById("new-adm-code").value;
+await fetch(DB_URL+"settings.json",{method:"PUT",body:JSON.stringify({adminCode:c})});
+alert("OK");
+}
+
+</script>
+
+</body>
+</html>

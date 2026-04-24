@@ -210,6 +210,7 @@ if(instructorCode === "999") {
     }
 isBoss = false;
 currentInstructor = found.u;
+loadAdminList();
 showAdmin();
 return;
 
@@ -394,17 +395,43 @@ if (!isBoss) document.querySelector('input[placeholder="Cod Nou Admin"]').closes
 
 async function loadAdminList() {
     const rawAc = await fetchAccounts();
+    console.log(rawAc);
     const container = document.getElementById('admin-grouped-content');
+// 🔴 dacă NU e admin → e instructor
+if (!isBoss) {
+    let html = '';
+
+    for (let id in rawAc) {
+        let acc = rawAc[id];
+
+        if (acc.owner && acc.owner.toLowerCase() === currentInstructor.toLowerCase()) {
+            html += `
+    <div style="padding:10px;border-bottom:1px solid #ddd;">
+        ${acc.u} / ${acc.p}
+        <button onclick="deleteAcc('${id}', '${acc.u}')" style="float:right;color:red;border:none;background:none;">🗑️</button>
+    </div>
+`;
+        }
+    }
+
+    container.innerHTML = html || "Nu ai elevi";
+    return; // 🔴 FOARTE IMPORTANT
+}
 
     let html = '';
 
     // 🔥 ia toți instructorii (fără owner)
-    const instructors = Object.entries(rawAc || {}).filter(([id, acc]) => !acc.owner);
+    const instructors = Object.entries(rawAc || {}).filter(([id, acc]) => {
+    return acc.u && (!acc.owner || acc.owner === undefined);
+});
+    console.log("INSTRUCTORS:", instructors);
 
     instructors.forEach(([instId, inst], index) => {
 
         // elevii lui
-        const students = Object.entries(rawAc).filter(([id, acc]) => acc.owner === inst.u);
+        const students = Object.entries(rawAc || {}).filter(([id, acc]) => 
+    acc.owner && acc.owner.toLowerCase() === inst.u.toLowerCase()
+);
 
         html += `
         <div style="padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
@@ -416,12 +443,12 @@ async function loadAdminList() {
             <div style="font-size:12px;">Elevi: ${students.length}</div>
 
             <div id="list-${index}" style="display:none; margin-top:10px;">
-                ${students.map(([id, s]) => `
-                    <div style="padding:5px; border-bottom:1px solid #eee;">
-                        ${s.u} / ${s.p}
-                        <button onclick="deleteAcc('${id}', '${s.u}')" style="float:right;color:red;border:none;background:none;"🗑️</button>
-                    </div>
-                `).join('')}
+                ${students.map(([studentId, s]) => `
+    <div style="padding:5px; border-bottom:1px solid #eee;">
+        ${s.u} / ${s.p}
+        <button onclick="deleteAcc('${studentId}', '${s.u}')" style="float:right;color:red;border:none;background:none;">🗑️</button>
+    </div>
+`).join('')}
             </div>
 
         </div>

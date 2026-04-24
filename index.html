@@ -1,283 +1,512 @@
+
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GAMI AUTO DRIVE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GAMI AUTO DRIVE - PRO CLOUD</title>
+    <style>
+        :root {
+            --primary: #1e3a8a; --accent: #fbbf24; --success: #22c55e;
+            --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; }
+        .hidden { display: none !important; }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-effect { animation: shake 0.3s ease-in-out; }
 
-<style>
-body{margin:0;font-family:Arial;background:#1e3a8a;color:white}
-.hidden{display:none}
+        .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1e3a8a 0%, #0f172a 100%); }
+        .login-card { background: white; padding: 40px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .input-style { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #cbd5e1; border-radius: 12px; background: #fff; color: #000; text-align: center; box-sizing: border-box; font-size: 16px; }
+        
+        .header { background: var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; color: white; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); background: white; border-bottom: 1px solid #cbd5e1; text-align: center; }
+        .stat-val { display: block; font-size: 18px; color: var(--primary); font-weight: 800; }
+        .stat-label { font-size: 9px; color: #64748b; font-weight: bold; text-transform: uppercase; }
 
-/* LOGIN */
-.login{height:100vh;display:flex;justify-content:center;align-items:center}
-.card{background:white;color:black;padding:20px;border-radius:15px;width:300px;text-align:center}
-input{width:100%;padding:10px;margin:10px 0}
-button{padding:10px;width:100%}
+        .q-card { background: var(--card); width: 95%; max-width: 800px; padding: 20px; border-radius: 20px; margin: 15px auto; text-align: center; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .img-container { width: 100%; margin-bottom: 15px; display: none; text-align: center; }
+        .img-container img { max-width: 100%; height: auto; border-radius: 12px; border: 3px solid #fbbf24; }
+        
+        .opt-btn { width: 100%; padding: 16px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 14px; background: white; color: var(--text); cursor: pointer; text-align: left; font-size: 16px; display: flex; align-items: center; }
+        .opt-btn span { font-weight: bold; color: var(--primary); margin-right: 15px; width: 20px; }
+        .opt-btn.selected { border-color: var(--accent); background: #fffbeb; }
+        .opt-btn.correct { background: var(--success) !important; border-color: #166534 !important; color: white; }
+        .opt-btn.wrong { background: var(--danger) !important; border-color: #991b1b !important; color: white; }
+        
+        .footer { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; display: flex; gap: 10px; box-sizing: border-box; border-top: 1px solid #cbd5e1; }
+        .btn { padding: 16px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; flex: 1; text-transform: uppercase; font-size: 11px; }
+        .btn-confirm { background: var(--primary); color: white; }
 
-/* PANEL */
-.panel{padding:10px}
-.item{background:white;color:black;margin:10px;padding:10px;border-radius:10px;position:relative}
-.del{position:absolute;right:5px;top:5px;cursor:pointer}
-
-/* EXAM */
-.header{display:flex;justify-content:space-between;background:#0f172a;padding:10px}
-.stats{display:flex;justify-content:space-around;background:white;color:black}
-.q{background:white;color:black;margin:10px;padding:15px;border-radius:10px}
-.opt{width:100%;padding:10px;margin:5px 0}
-.footer{position:fixed;bottom:0;width:100%;display:flex}
-.footer button{flex:1}
-</style>
+        .admin-card-stu { background: white; color: #1e293b; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; position: relative; border: 1px solid #e2e8f0; }
+        .results-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; justify-content: center; }
+        .score-circle { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; border: 2px solid transparent; }
+        .circle-pass { background: var(--success); color: white; }
+        .circle-fail { background: var(--danger); color: white; }
+        .gauges-row { display: flex; justify-content: space-around; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; }
+        .gauge-visual { width: 50px; height: 50px; border-radius: 50%; border: 4px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; margin-bottom: 5px; }
+    </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
-<div id="login" class="login">
-<div class="card">
-<h2>LOGIN</h2>
-<input id="user">
-<input id="pass" type="password">
-<button onclick="login()">INTRĂ</button>
-</div>
-</div>
-
-<!-- ADMIN -->
-<div id="admin" class="hidden panel">
-<h2>ADMIN</h2>
-<button onclick="addInstructor()">+</button>
-<div id="adminList"></div>
+<div id="screen-login" class="login-screen">
+    <div id="login-card" class="login-card">
+        <h1 style="color:var(--primary)">GAMI DRIVE</h1>
+       <input type="text" id="stu-name" placeholder="Cursant / Instructor" class="input-style">
+       <input type="password" id="stu-code" placeholder="Cod Acces" class="input-style">
+       <input type="password" id="admin-code" placeholder="Admin" class="input-style">
+        <button class="btn btn-confirm" style="width:100%" onclick="playClick(); auth()">CONECTARE</button>
+    </div>
 </div>
 
-<!-- INSTRUCTOR -->
-<div id="instr" class="hidden panel">
-<h2>INSTRUCTOR</h2>
-<button onclick="addStudent()">+</button>
-<div id="studList"></div>
+<div id="screen-exam" class="hidden">
+    <div class="header">
+        <div id="user-tag" style="font-weight:bold;">Cursant: -</div>
+        <div id="timer" style="color:var(--accent); font-weight:900;">30:00</div>
+    </div>
+    <div class="stats-grid">
+        <div style="padding:10px;"><span class="stat-label">Rămase</span><span class="stat-val" id="s-rem">26</span></div>
+        <div style="padding:10px; color:var(--success)"><span class="stat-label">Corecte</span><span class="stat-val" id="s-cor">0</span></div>
+        <div style="padding:10px; color:var(--danger)"><span class="stat-label">Greșite</span><span class="stat-val" id="s-gre">0</span></div>
+        <div style="padding:10px;"><span class="stat-label">Scor</span><span class="stat-val" id="s-perc">0%</span></div>
+    </div>
+    <div id="q-card-main" class="q-card">
+        <div id="img-wrap" class="img-container"></div>
+        <div id="q-text" style="font-size:18px; font-weight:bold; margin-bottom:15px; text-align: left;"></div>
+        <div id="opts-list"></div>
+    </div>
+    <div class="footer">
+        <button class="btn" style="background:#fee2e2; color:var(--danger); flex:0.4;" onclick="playClick(); location.reload()">ABANDON</button>
+        <button class="btn" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;" onclick="playClick(); later()">MAI TÂRZIU</button>
+        <button class="btn btn-confirm" id="btn-main" onclick="playClick(); handleAction()">CONFIRMĂ</button>
+    </div>
 </div>
 
-<!-- STUDENT / EXAM -->
-<div id="exam" class="hidden">
-<div class="header">
-<div id="userTag"></div>
-<div id="timer">30:00</div>
+<div id="screen-admin" class="hidden" style="padding:20px; padding-bottom:100px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="color:var(--primary); margin:0;">📊 CONTROL PANEL</h2>
+        <button class="btn btn-confirm" onclick="addNewAccount()" style="border-radius:50%; width:45px; height:45px; font-size:24px; flex:none;">+</button>
+    </div>
+    <div id="admin-code-box">
+    <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 25px; border-left: 4px solid var(--primary); display: flex;">
+        <input type="text" id="new-adm-code" placeholder="Cod Nou Admin" class="input-style" style="margin-bottom:0; font-size:12px;">
+        <button class="btn btn-confirm" onclick="updateCloudCodes()" style="padding:10px; font-size:10px; flex: 0.6;">SALVEAZĂ</button>
+    </div>
 </div>
-
-<div class="stats">
-<div>Corecte: <span id="cor">0</span></div>
-<div>Greșeli: <span id="gre">0</span></div>
-</div>
-
-<div class="q">
-<div id="qText"></div>
-<div id="opts"></div>
-</div>
-
-<div class="footer">
-<button onclick="location.reload()">IEȘIRE</button>
-<button onclick="answer()">CONFIRMĂ</button>
-</div>
+    <div id="admin-grouped-content"></div>
+    <button class="btn btn-confirm" style="position:fixed; bottom:20px; left:5%; width:90%; z-index:1000;" onclick="location.reload()">IEȘIRE ADMIN</button>
 </div>
 
 <script>
-
-const DB="https://gamiautodrive-default-rtdb.europe-west1.firebasedatabase.app/";
-
-let data={instructors:[]};
-let role="",currentI=null,currentS=null;
-
-/* LOAD */
-async function load(){
-let r=await fetch(DB+"data.json");
-let d=await r.json();
-if(d) data=d;
-renderAdmin();
+const DB_URL = "https://gamiautodrive-default-rtdb.europe-west1.firebasedatabase.app/";
+let initialPool = [], cor = 0, gre = 0, sel = [], examHistory = [], timer, studentName = "", activePool = [], isPaused = false;let qIndex = 0;
+let isBoss = false;
+let currentInstructor = "";
+let globalExamsData = [];
+const totalQ = 26;
+const ALLOWED_CATEGORIES = [
+  "autostrazi",
+  "depasire",
+  "oprire",
+  "stationare",
+  "semafoare",
+  "ferata",
+  "preventiva",
+  "marcaje",
+  "indicatoare",
+  "viteza",
+  "giratoriu",
+  "prioritate",
+  "drum"
+];
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playClick() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
-load();
 
-/* SAVE */
-function save(){
-fetch(DB+"data.json",{method:"PUT",body:JSON.stringify(data)});
+document.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !document.getElementById('screen-login').classList.contains('hidden')) { playClick(); auth(); } });
+
+function triggerError(id) {
+    const el = document.getElementById(id);
+    el.classList.add('shake-effect');
+    if (navigator.vibrate) navigator.vibrate(200);
+    setTimeout(() => el.classList.remove('shake-effect'), 300);
 }
 
-/* LOGIN */
-function login(){
-let u=user.value,p=pass.value;
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+function pick(l, n) { return shuffle([...l]).slice(0, n); }
 
-if(p==="999"){
-role="admin";
-show("admin");
-renderAdmin();
+async function fetchSettings() { try { const r = await fetch(`${DB_URL}settings.json`); return await r.json() || { adminCode: "999" }; } catch (e) { return { adminCode: "999" }; } }
+async function fetchAccounts() { try { const r = await fetch(`${DB_URL}accounts.json`); return await r.json() || {}; } catch(e){ return {}; } }
+async function syncExamToCloud(d) { try { await fetch(`${DB_URL}exams.json`, { method: 'POST', body: JSON.stringify(d) }); } catch(e){} }
+async function fetchRawExams() { try { const r = await fetch(`${DB_URL}exams.json`); return await r.json(); } catch(e){return null;} }
+async function loadUsed() {
+    try {
+        const r = await fetch(`${DB_URL}used.json`);
+        return await r.json() || [];
+    } catch {
+        return [];
+    }
+}
+
+async function saveUsed(data) {
+    await fetch(`${DB_URL}used.json`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    });
+}
+async function fetchQuestions() {
+    try {
+        const r = await fetch(`${DB_URL}pool.json`);
+        const d = await r.json();
+
+        if (!d) return false;
+
+        // 🔥 IMPORTANT: păstrăm ID-ul Firebase
+        initialPool = Object.entries(d).map(([id, val]) => ({
+            id,
+            ...val
+        }));
+
+        return initialPool.length > 0;
+
+    } catch (e) { 
+        return false; 
+    }
+}
+
+async function auth() {
+    const name = document.getElementById('stu-name').value.trim(),
+          code = document.getElementById('stu-code').value.trim(),
+          s = await fetchSettings();
+     const instructorCode = document.getElementById('admin-code')?.value.trim();
+
+if(instructorCode === "999") {
+    isBoss = true;
+    alert("ADMIN BOSS");
+    showAdmin();
+    return;
+}
+
+    const accs = await fetchAccounts();
+    const found = Object.values(accs).find(x => x.u === name && x.p === code);
+
+    if(!found) { 
+        alert("Date incorecte!"); 
+        return; 
+    }
+isBoss = false;
+currentInstructor = found.u;
+showAdmin();
 return;
-}
 
-let inst=data.instructors.find(i=>i.name===u && i.pass===p);
-if(inst){
-role="instr";currentI=inst;
-show("instr");
-renderInstr();
-return;
-}
+    const ok = await fetchQuestions();
+    if(!ok) return alert("Eroare date!");
 
-for(let i of data.instructors){
-let s=i.students.find(s=>s.name===u && s.pass===p);
-if(s){
-role="stud";currentS=s;currentI=i;
-startExam();
-return;
-}
-}
+    const p = initialPool.filter(x => x && x.q && x.a && x.b && x.c && x.ans);
 
-alert("Greșit");
-}
+    const norm = (txt) => txt?.toLowerCase().trim();
 
-/* SHOW */
-function show(x){
-login.style.display="none";
-admin.classList.add("hidden");
-instr.classList.add("hidden");
-exam.classList.add("hidden");
-document.getElementById(x).classList.remove("hidden");
-}
+    const imgAll = p.filter(x => norm(x.cat).includes("imagini"));
+    const nonImg = p.filter(x => !norm(x.cat).includes("imagini"));
+let final = [];
 
-/* ADMIN */
-function renderAdmin(){
-let div=adminList;div.innerHTML="";
-data.instructors.forEach((i,ix)=>{
-div.innerHTML+=`
-<div class="item">
-<div class="del" onclick="delI(${ix})">🗑</div>
-<b onclick="toggle(${ix})">${i.name}</b>
-<div id="i${ix}" class="hidden"></div>
-</div>`;
+// 🔒 FIXE (NU INTRĂ ÎN RANDOM)
+const infr = nonImg.filter(x => norm(x.cat).includes("inf"));
+const contr = nonImg.filter(x => norm(x.cat).includes("cont"));
+const mec = nonImg.filter(x => norm(x.cat).includes("mec"));
+const prim = nonImg.filter(x => norm(x.cat).includes("prim"));
+
+// 🎯 RANDOM DOAR DIN ASTEA
+const randomPool = nonImg.filter(x => {
+    const c = norm(x.cat);
+    return (
+        c.includes("aut") ||
+        c.includes("dep") ||
+        c.includes("opr") || c.includes("stat") ||
+        c.includes("sem") ||
+        c.includes("fer") ||
+        c.includes("prev") ||
+        c.includes("marc") ||
+        c.includes("ind") ||
+        c.includes("prior") || c.includes("gir") ||
+        c.includes("vite") || c.includes("drum")
+    );
 });
+
+// 🔥 IMAGINI (10)
+let usedGlobal = await loadUsed();
+let freshImg = imgAll.filter(x => !usedGlobal.includes(x.id));
+
+if (freshImg.length < 10) {
+    usedGlobal = [];
+    freshImg = imgAll;
 }
 
-function toggle(i){
-let d=document.getElementById("i"+i);
-d.classList.toggle("hidden");
-d.innerHTML="";
-data.instructors[i].students.forEach((s,j)=>{
-d.innerHTML+=`
-<div class="item">
-<div class="del" onclick="delS(${i},${j})">🗑</div>
-${s.name}
-</div>`;
+let selectedImg = pick(freshImg, 10);
+usedGlobal.push(...selectedImg.map(x => x.id));
+await saveUsed(usedGlobal);
+
+final.push(...selectedImg);
+
+// 🔥 FIXE
+final.push(...pick(mec.length ? mec : nonImg, 2));
+final.push(...pick(prim.length ? prim : nonImg, 1));
+final.push(...pick(contr.length ? contr : nonImg, 2));
+final.push(...pick(infr.length ? infr : nonImg, 1));
+
+// 🔥 RANDOM (COMPLETARE PÂNĂ LA 26)
+let remaining = randomPool.filter(x => !final.some(f => f.id === x.id));
+final.push(...pick(remaining, 26 - final.length));
+
+// 🔥 ELIMINARE DUPLICATE
+final = final.filter((v, i, a) => a.findIndex(x => x.id === v.id) === i);
+
+// 🔥 FIX RĂSPUNSURI (EXACT CERINȚA TA)
+const countAns = q => q.ans.replace(/\s/g, '').length;
+
+// scoate toate 2 și 3
+let keep2 = [];
+let keep3 = null;
+
+final = final.filter(q => {
+    let c = countAns(q);
+
+    if (c === 2 && keep2.length < 2) {
+        keep2.push(q);
+        return false;
+    }
+
+    if (c === 3 && !keep3) {
+        keep3 = q;
+        return false;
+    }
+
+    return c !== 2 && c !== 3;
 });
+
+// adaugă fix cerința
+if (keep2.length < 2) {
+    let extra = nonImg.filter(x => countAns(x) === 2 && !final.some(f => f.id === x.id));
+    keep2.push(...pick(extra, 2 - keep2.length));
 }
 
-function addInstructor(){
-let n=prompt("nume"),p=prompt("parola");
-data.instructors.push({name:n,pass:p,students:[]});
-save();renderAdmin();
+if (!keep3) {
+    keep3 = nonImg.find(x => countAns(x) === 3 && !final.some(f => f.id === x.id));
 }
 
-function delI(i){
-if(confirm("ștergi instructor?")){
-data.instructors.splice(i,1);
-save();renderAdmin();
-}
-}
+if (keep3) final.push(keep3);
 
-function delS(i,j){
-if(confirm("ștergi elev?")){
-data.instructors[i].students.splice(j,1);
-save();renderAdmin();
-}
-}
-
-/* INSTRUCTOR */
-function renderInstr(){
-let d=studList;d.innerHTML="";
-currentI.students.forEach((s,i)=>{
-d.innerHTML+=`
-<div class="item">
-<div class="del" onclick="delStud(${i})">🗑</div>
-<b onclick="hist(${i})">${s.name}</b>
-<div id="h${i}" class="hidden"></div>
-</div>`;
+// 🔥 FINAL
+final = shuffle(final).slice(0, 26);
+    if (final.length < 26) {
+    let remaining = nonImg.filter(x => {
+    const c = norm(x.cat);
+    return ALLOWED_CATEGORIES.some(k => c.includes(k)) && !final.some(f => f.id === x.id);
 });
+    final.push(...pick(remaining, 26 - final.length));
 }
 
-function addStudent(){
-let n=prompt("nume"),p=prompt("parola");
-currentI.students.push({name:n,pass:p,history:[]});
-save();renderInstr();
+    final = shuffle(final).slice(0, 26);
+
+    studentName = name;
+    activePool = final;
+
+    qIndex = 0;
+
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-exam').classList.remove('hidden');
+    document.getElementById('user-tag').innerText = "Cursant: " + name;
+
+    startTimer();
+    loadQ();
 }
 
-function delStud(i){
-if(confirm("ștergi elev?")){
-currentI.students.splice(i,1);
-save();renderInstr();
-}
-}
-
-function hist(i){
-let d=document.getElementById("h"+i);
-d.classList.toggle("hidden");
-d.innerHTML="";
-currentI.students[i].history.forEach(h=>{
-d.innerHTML+=`
-<div class="item">
-Scor:${h.cor} Greșeli:${h.gre}
-</div>`;
-});
-}
-
-/* EXAM */
-let cor=0,gre=0,time=1800,t;
-
-function startExam(){
-show("exam");
-userTag.innerText=currentS.name;
-cor=0;gre=0;time=1800;
-
-t=setInterval(()=>{
-time--;
-let m=Math.floor(time/60),s=time%60;
-timer.innerText=m+":"+(s<10?"0":"")+s;
-if(time<=0)finish();
-},1000);
-
-nextQ();
+function loadQ() {
+    if(activePool.length === 0) { 
+        const m = cor >= 22 ? `✅ ADMIS! ✅\n\nSCOR FINAL: ${cor}` : `❌ RESPINS! ❌\n\nSCOR FINAL: ${cor}`;
+        finalize(m); return; 
+    }
+    isPaused = false; sel = [];
+    const btn = document.getElementById('btn-main'), q = activePool[0], imgWrap = document.getElementById('img-wrap');
+    btn.innerText = "CONFIRMĂ"; btn.style.background = "var(--primary)";
+    if(q.img && q.img !== "") { imgWrap.innerHTML = `<img src="${q.img}">`; imgWrap.style.display = "block"; } else { imgWrap.style.display = "none"; }
+    qIndex++;
+qIndex++;
+document.getElementById('q-text').innerText = qIndex + ". " + q.q;
+    const list = document.getElementById('opts-list'); list.innerHTML = "";
+    ['A','B','C'].forEach(l => {
+        let b = document.createElement('button'); b.className = "opt-btn";
+        b.innerHTML = `<span>${l}.</span> ${q[l.toLowerCase()]}`;
+        b.onclick = () => { if(!isPaused) { playClick(); b.classList.toggle('selected'); if(sel.includes(l)) sel = sel.filter(x => x !== l); else sel.push(l); } };
+        list.appendChild(b);
+    });
+    updateStats();
 }
 
-function nextQ(){
-if(gre>=5||cor+gre>=26)return finish();
-
-qText.innerText="Întrebare";
-opts.innerHTML="";
-["A","B","C"].forEach(a=>{
-let b=document.createElement("button");
-b.className="opt";
-b.innerText=a;
-b.onclick=()=>check();
-opts.appendChild(b);
-});
+function handleAction() {
+    if(isPaused) { activePool.shift(); loadQ(); return; }
+    if(sel.length === 0) return alert("Alege un răspuns!");
+    const q = activePool[0], pAns = sel.sort().join(""), cAns = q.ans.toString().replace(/\s/g, '').toUpperCase(), isOk = (pAns === cAns);
+    document.querySelectorAll('.opt-btn').forEach(b => {
+        const l = b.innerText.charAt(0);
+        if(cAns.includes(l)) b.classList.add('correct'); else if(sel.includes(l)) b.classList.add('wrong');
+    });
+    if(!isOk) { 
+        gre++; triggerError('q-card-main'); examHistory.push({q: q.q, r: pAns, c: cAns}); 
+        if(gre >= 5) { setTimeout(() => finalize(`❌ RESPINS! ❌\n\nAI ACUMULAT 5 GREȘELI.\nAI AVUT ${cor} RĂSPUNSURI CORECTE.`), 500); return; } 
+    } else { cor++; }
+    isPaused = true; document.getElementById('btn-main').innerText = "MAI DEPARTE"; document.getElementById('btn-main').style.background = "var(--success)";
+    updateStats();
 }
 
-function check(){
-if(Math.random()<0.5)cor++;else gre++;
-document.getElementById("cor").innerText=cor;
-document.getElementById("gre").innerText=gre;
-nextQ();
+function later() { if(!isPaused && activePool.length > 1) { activePool.push(activePool.shift()); loadQ(); } }
+function updateStats() { document.getElementById('s-rem').innerText = activePool.length; document.getElementById('s-cor').innerText = cor; document.getElementById('s-gre').innerText = gre; document.getElementById('s-perc').innerText = Math.round((cor/totalQ)*100) + "%"; }
+function startTimer() { let t = 1800; timer = setInterval(() => { let m = Math.floor(t/60), s = t%60; document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`; if(t-- <= 0) finalize(`❌ TIMP EXPIRAT! ❌\n\nRESPINS. SCOR FINAL: ${cor}`); }, 1000); }
+async function finalize(m) { clearInterval(timer); await syncExamToCloud({ nume: studentName, scor: cor, greseli: gre, data: new Date().toLocaleString(), timp: document.getElementById('timer').innerText, detaliiGresele: examHistory }); alert(m); location.reload(); }
+
+async function showAdmin() {
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-admin').classList.remove('hidden');
+    if (!isBoss) {
+    document.getElementById('new-adm-code').style.display = 'none';
+    document.querySelector('button[onclick="updateCloudCodes()"]').style.display = 'none';
+}
+    const exitBtn = document.querySelector('button[onclick="location.reload()"]');
+
+if (exitBtn) {
+    exitBtn.innerText = isBoss ? "IEȘIRE ADMIN" : "IEȘIRE INSTRUCTOR";
+}
+if (!isBoss) document.querySelector('input[placeholder="Cod Nou Admin"]').closest('div').style.display = 'none';}
+
+async function loadAdminList() {
+    const rawAc = await fetchAccounts();
+    const container = document.getElementById('admin-grouped-content');
+
+    let html = '';
+
+    // 🔥 ia toți instructorii (fără owner)
+    const instructors = Object.entries(rawAc || {}).filter(([id, acc]) => !acc.owner);
+
+    instructors.forEach(([instId, inst], index) => {
+
+        // elevii lui
+        const students = Object.entries(rawAc).filter(([id, acc]) => acc.owner === inst.u);
+
+        html += `
+        <div style="padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
+            
+            <div style="font-weight:bold; cursor:pointer;" onclick="toggleList('list-${index}')">
+                ${inst.u}
+            </div>
+
+            <div style="font-size:12px;">Elevi: ${students.length}</div>
+
+            <div id="list-${index}" style="display:none; margin-top:10px;">
+                ${students.map(([id, s]) => `
+                    <div style="padding:5px; border-bottom:1px solid #eee;">
+                        ${s.u} / ${s.p}
+                        <button onclick="deleteAcc('${id}', '${s.u}')" style="float:right;color:red;border:none;background:none;"🗑️</button>
+                    </div>
+                `).join('')}
+            </div>
+
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
 }
 
-function answer(){}
+async function addNewAccount() {
+    const u = prompt("Nume:");
+    const p = prompt("Parola:");
 
-function finish(){
-clearInterval(t);
+    if (u && p) {
 
-currentS.history.push({cor,gre});
-save();
+        // 🔴 dacă e ADMIN → creează instructor
+        if (isBoss) {
+            await fetch(`${DB_URL}accounts.json`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    u: u,
+                    p: p
+                })
+            });
+        }
 
-if(cor>=22)alert("ADMIS "+cor);
-else alert("RESPINS "+cor);
+        // 🔴 dacă e INSTRUCTOR → creează elev
+        else {
+            await fetch(`${DB_URL}accounts.json`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    u: u,
+                    p: p,
+                    owner: currentInstructor
+                })
+            });
+        }
 
-location.reload();
+        loadAdminList();
+    }
+}
+async function updateCloudCodes() { 
+    const a = document.getElementById('new-adm-code').value; 
+    await fetch(`${DB_URL}settings.json`, { method: 'PUT', body: JSON.stringify({ adminCode: a }) }); 
+    alert("Salvat!"); 
+}
+function toggleList(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+}
+async function deleteAcc(id, name) {
+
+    if (!confirm("Sigur vrei să ștergi " + name + "?")) return;
+
+    const rawAc = await fetchAccounts();
+
+    const acc = rawAc[id];
+
+    // 🔴 dacă e instructor → șterge și elevii lui
+    if (!acc.owner) {
+        for (let key in rawAc) {
+            if (rawAc[key].owner === acc.u) {
+                await fetch(`${DB_URL}accounts/${key}.json`, {
+                    method: 'DELETE'
+                });
+            }
+        }
+    }
+
+    // 🔴 șterge contul
+    await fetch(`${DB_URL}accounts/${id}.json`, {
+        method: 'DELETE'
+    });
+
+    loadAdminList();
 }
 
+function toggleDetails(sID, idx, realName) {
+    const box = document.getElementById(`err-${sID}`), filtered = globalExamsData.filter(x => x.nume === realName), ex = filtered[idx];
+    if(!ex.detaliiGresele || ex.detaliiGresele.length === 0) box.innerHTML = "<div style='color:green; font-weight:bold;'>✅ Fără greșeli!</div>";
+    else box.innerHTML = ex.detaliiGresele.map(g => `<div style="padding:5px; border-bottom:1px solid #eee; text-align:left; font-size:11px;"><b>Q:</b> ${g.q}<br><span style="color:red">R: ${g.r}</span> | <span style="color:green">C: ${g.c}</span></div>`).join('');
+    box.classList.toggle('hidden');
+}
 </script>
-
 </body>
 </html>

@@ -422,9 +422,38 @@ let medie = total ? (testeElev.reduce((a, b) => a + b.scor, 0) / total).toFixed(
           html += `
 <div class="admin-card-stu">
 
+  <div style="position:relative;">
+
     <div style="font-weight:bold; color:var(--primary); font-size:18px;">
         ${acc.u}
     </div>
+
+    <button onclick="editStudent('${id}', '${acc.u}', '${acc.p}')" 
+    style="
+        position:absolute;
+        top:0;
+        right:30px;
+        border:none;
+        background:none;
+        cursor:pointer;
+    ">
+    ✏️
+    </button>
+
+    <button onclick="deleteAcc('${id}', '${acc.u}')" 
+    style="
+        position:absolute;
+        top:0;
+        right:0;
+        border:none;
+        background:none;
+        cursor:pointer;
+        color:red;
+    ">
+    🗑️
+    </button>
+
+</div>
 
     <div style="font-size:10px; color:#64748b;">
         Parola: ${acc.p}
@@ -510,24 +539,54 @@ let medie = total ? (testeElev.reduce((a, b) => a + b.scor, 0) / total).toFixed(
 style="position:absolute; top:10px; right:10px; border:none; background:none; cursor:pointer;">
 🗑️
 </button>
+<button onclick="editInstructor('${instId}', '${inst.u}', '${inst.p}')" 
+style="position:absolute; top:10px; right:40px; border:none; background:none; cursor:pointer;">
+✏️
+</button>
             
-            <div style="text-align:center; cursor:pointer;" onclick="toggleList('list-${index}')">
+          <div style="cursor:pointer; text-align:center;" onclick="toggleList('list-${index}')">
 
-    <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">
+    <div style="
+        font-weight:bold;
+        font-size:18px;
+        margin-bottom:8px;
+        text-align:center;
+    ">
         ${inst.u}
     </div>
 
-    <div style="font-size:13px; color:#555;">
-        Parola: ${inst.p || "-"} / Elevi: ${students.length}
+    <div style="
+        font-size:13px;
+        color:#64748b;
+        text-align:center;
+        width:100%;
+    ">
+        Parola: ${inst.p || "-"}<br>
+        Elevi: ${students.length}
     </div>
 
 </div>
 
             <div id="list-${index}" style="display:none; margin-top:10px;">
-                ${students.map(([studentId, s]) => `
-    <div style="padding:5px; border-bottom:1px solid #eee;">
-        ${s.u} / ${s.p}
-        <button onclick="deleteAcc('${studentId}', '${s.u}')" style="float:right;color:red;border:none;background:none;">🗑️</button>
+           ${students.map(([studentId, s]) => `
+    <div style="padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+
+        <div>
+            ${s.u} / ${s.p}
+        </div>
+
+        <div>
+            <span onclick="editStudent('${studentId}', '${s.u}', '${s.p}')" 
+            style="cursor:pointer; margin-right:10px;">
+            ✏️
+            </span>
+
+            <span onclick="deleteAcc('${studentId}', '${s.u}')" 
+            style="cursor:pointer; color:red;">
+            🗑️
+            </span>
+        </div>
+
     </div>
 `).join('')}
             </div>
@@ -537,6 +596,29 @@ style="position:absolute; top:10px; right:10px; border:none; background:none; cu
     });
 
     container.innerHTML = html;
+}async function editStudent(id, oldName, oldPass) {
+
+    const newName = prompt("Nume elev nou:", oldName);
+    if (!newName) return;
+
+    const newPass = prompt("Parola nouă:", oldPass);
+    if (!newPass) return;
+
+    const rawAc = await fetchAccounts();
+
+    const owner = rawAc[id].owner;
+
+    rawAc[id].u = newName;
+    rawAc[id].p = newPass;
+    rawAc[id].owner = owner;
+
+    await fetch(`${DB_URL}accounts/${id}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(rawAc[id])
+    });
+
+    alert("Elev actualizat!");
+    loadAdminList();
 }
 
 
@@ -607,6 +689,43 @@ async function deleteAcc(id, name) {
         method: 'DELETE'
     });
 
+loadAdminList();
+}
+
+// 🔥 AICI, continuare după acoladă
+async function editInstructor(id, oldName, oldPass) {
+
+    const newName = prompt("Nume nou:", oldName);
+    if (!newName) return;
+
+    const newPass = prompt("Parola nouă:", oldPass);
+    if (!newPass) return;
+
+    const rawAc = await fetchAccounts();
+
+    for (let key in rawAc) {
+
+        if (key === id) {
+            rawAc[key].u = newName;
+            rawAc[key].p = newPass;
+
+            await fetch(`${DB_URL}accounts/${key}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(rawAc[key])
+            });
+        }
+
+        if (rawAc[key].owner === oldName) {
+            rawAc[key].owner = newName;
+
+            await fetch(`${DB_URL}accounts/${key}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(rawAc[key])
+            });
+        }
+    }
+
+    alert("Instructor actualizat!");
     loadAdminList();
 }
 

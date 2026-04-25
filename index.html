@@ -419,81 +419,71 @@ let procent = total ? Math.round((admise / total) * 100) : 0;
 
 let medie = total ? (testeElev.reduce((a, b) => a + b.scor, 0) / total).toFixed(1) : 0;
 
-          html += `
+html += `
 <div class="admin-card-stu">
 
-  <div style="position:relative;">
+    <!-- CLICK PE NUME -->
+    <div onclick="toggleElev('${acc.u.replace(/\s/g, '')}')" style="cursor:pointer;">
 
-    <div style="font-weight:bold; color:var(--primary); font-size:18px;">
-        ${acc.u}
-    </div>
-
-    <button onclick="editStudent('${id}', '${acc.u}', '${acc.p}')" 
-    style="
-        position:absolute;
-        top:0;
-        right:30px;
-        border:none;
-        background:none;
-        cursor:pointer;
-    ">
-    ✏️
-    </button>
-
-    <button onclick="deleteAcc('${id}', '${acc.u}')" 
-    style="
-        position:absolute;
-        top:0;
-        right:0;
-        border:none;
-        background:none;
-        cursor:pointer;
-        color:red;
-    ">
-    🗑️
-    </button>
-
-</div>
-
-    <div style="font-size:10px; color:#64748b;">
-        Parola: ${acc.p}
-    </div>
-
-    <div class="results-grid">
-        ${testeElev.map(function(ex, index) {
-            return `
-                <div class="score-circle ${ex.scor < 22 ? 'circle-fail' : 'circle-pass'}"
-                     onclick="toggleDetailsInstructor('${acc.u}', ${index})">
-                    ${ex.scor}
-                </div>
-            `;
-        }).join('')}
-    </div>
-
-    <div class="gauges-row">
-        <div class="gauge-col">
-            <div class="gauge-visual">${medie}</div>
-            <small>Media</small>
+        <div style="font-weight:bold; color:var(--primary); font-size:18px;">
+            ${acc.u}
         </div>
 
-        <div class="gauge-col">
-            <div class="gauge-visual">${total}</div>
-            <small>Teste</small>
+        <div style="font-size:10px; color:#64748b;">
+            Parola: ${acc.p}
         </div>
 
-        <div class="gauge-col">
-            <div class="gauge-visual">${procent}%</div>
-            <small>Admis</small>
-        </div>
     </div>
 
-    <div id="err-${acc.u.replace(/\s/g, '')}" class="hidden" style="
-        margin-top:10px;
-        text-align:left;
-        background:#f8fafc;
-        padding:10px;
-        border-radius:10px;
-    "></div>
+    <!-- BUTOANE -->
+    <div style="position:absolute; top:10px; right:10px;">
+        <span onclick="editStudent('${id}', '${acc.u}', '${acc.p}')" 
+        style="cursor:pointer; margin-right:10px;">✏️</span>
+
+        <span onclick="deleteAcc('${id}', '${acc.u}')" 
+        style="cursor:pointer; color:red;">🗑️</span>
+    </div>
+
+    <!-- CONTINUT ASCUNS -->
+    <div id="elev-${acc.u.replace(/\s/g, '')}" style="display:none;">
+
+        <div class="results-grid">
+            ${testeElev.map(function(ex, index) {
+                return `
+                    <div class="score-circle ${ex.scor < 22 ? 'circle-fail' : 'circle-pass'}"
+                         onclick="toggleDetailsInstructor('${acc.u}', ${index})">
+                        ${ex.scor}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+
+        <div class="gauges-row">
+            <div class="gauge-col">
+                <div class="gauge-visual">${medie}</div>
+                <small>Media</small>
+            </div>
+
+            <div class="gauge-col">
+                <div class="gauge-visual">${total}</div>
+                <small>Teste</small>
+            </div>
+
+            <div class="gauge-col">
+                <div class="gauge-visual">${procent}%</div>
+                <small>Admis</small>
+            </div>
+        </div>
+
+        <div id="err-${acc.u.replace(/\s/g, '')}" class="hidden" style="
+            margin-top:10px;
+            text-align:left;
+            background:#f8fafc;
+            padding:10px;
+            border-radius:10px;
+        "></div>
+
+    </div>
 
 </div>
 `;
@@ -663,6 +653,12 @@ function toggleList(id) {
     const el = document.getElementById(id);
     if (el) {
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+}
+function toggleElev(id) {
+    const el = document.getElementById("elev-" + id);
+    if (el) {
+        el.style.display = el.style.display === "none" ? "block" : "none";
     }
 }
 async function deleteAcc(id, name) {

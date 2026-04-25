@@ -203,27 +203,37 @@ if(instructorCode === "999") {
 }
 
     const accs = await fetchAccounts();
-    const found = Object.values(accs).find(x => x.u === name && x.p === code);
+  const found = Object.values(accs).find(x => x.u === name && x.p === code);
 
-    if(!found) { 
-        alert("Date incorecte!"); 
-        return; 
-    }
+if(!found) { 
+    alert("Date incorecte!"); 
+    return; 
+}
+
 isBoss = false;
-currentInstructor = found.u;
-loadAdminList();
-showAdmin();
-return;
+
+// 🔴 INSTRUCTOR = NU are owner
+if (!("owner" in found)) {
+    currentInstructor = found.u;
+    loadAdminList();
+    showAdmin();
+    return;
+}
+
+await fetchQuestions();
 
     const ok = await fetchQuestions();
     if(!ok) return alert("Eroare date!");
 
     const p = initialPool.filter(x => x && x.q && x.a && x.b && x.c && x.ans);
 
-    const norm = (txt) => txt?.toLowerCase().trim();
+    const norm = (txt) => (txt || "").toLowerCase().trim();;
 
-    const imgAll = p.filter(x => norm(x.cat).includes("imagini"));
-    const nonImg = p.filter(x => !norm(x.cat).includes("imagini"));
+let usedGlobal = await loadUsed();
+let freshAll = initialPool.filter(x => !usedGlobal.includes(x.id));
+if (freshAll.length < 26) { usedGlobal = []; freshAll = initialPool; }
+const imgAll = freshAll.filter(x => norm(x.cat || "").includes("imagini"));
+const nonImg = freshAll.filter(x => !norm(x.cat || "").includes("imagini"));
 let final = [];
 
 // 🔒 FIXE (NU INTRĂ ÎN RANDOM)
@@ -249,22 +259,9 @@ const randomPool = nonImg.filter(x => {
     );
 });
 
-// 🔥 IMAGINI (10)
-let usedGlobal = await loadUsed();
-let freshImg = imgAll.filter(x => !usedGlobal.includes(x.id));
-
-if (freshImg.length < 10) {
-    usedGlobal = [];
-    freshImg = imgAll;
-}
-
-let selectedImg = pick(freshImg, 10);
-usedGlobal.push(...selectedImg.map(x => x.id));
-await saveUsed(usedGlobal);
-
-final.push(...selectedImg);
-
 // 🔥 FIXE
+// 🔥 IMAGINI (10)
+final.push(...pick(imgAll, 10));
 final.push(...pick(mec.length ? mec : nonImg, 2));
 final.push(...pick(prim.length ? prim : nonImg, 1));
 final.push(...pick(contr.length ? contr : nonImg, 2));
@@ -276,6 +273,9 @@ final.push(...pick(remaining, 26 - final.length));
 
 // 🔥 ELIMINARE DUPLICATE
 final = final.filter((v, i, a) => a.findIndex(x => x.id === v.id) === i);
+// 🔥 salvăm întrebările folosite
+usedGlobal.push(...final.map(x => x.id));
+await saveUsed(usedGlobal);
 
 // 🔥 FIX RĂSPUNSURI (EXACT CERINȚA TA)
 const countAns = q => q.ans.replace(/\s/g, '').length;
@@ -395,31 +395,93 @@ if (exitBtn) {
 if (!isBoss) document.querySelector('input[placeholder="Cod Nou Admin"]').closest('div').style.display = 'none';}
 
 async function loadAdminList() {
+const rawEx = await fetchRawExams();
+globalExamsData = rawEx ? Object.keys(rawEx).map(k => ({...rawEx[k], fbKey: k})) : [];
     const rawAc = await fetchAccounts();
     console.log(rawAc);
     const container = document.getElementById('admin-grouped-content');
+
 // 🔴 dacă NU e admin → e instructor
 if (!isBoss) {
-    let html = '';
+
+    let html = "";
 
     for (let id in rawAc) {
         let acc = rawAc[id];
 
         if (acc.owner && acc.owner.toLowerCase() === currentInstructor.toLowerCase()) {
-            html += `
-    <div style="padding:10px;border-bottom:1px solid #ddd;">
-        ${acc.u} / ${acc.p}
-        <button onclick="deleteAcc('${id}', '${acc.u}')" style="float:right;color:red;border:none;background:none;">🗑️</button>
+      let testeElev = globalExamsData.filter(x => x.nume === acc.u);
+
+let admise = testeElev.filter(x => x.scor >= 22).length;
+let total = testeElev.length;
+
+let procent = total ? Math.round((admise / total) * 100) : 0;
+
+let medie = total ? (testeElev.reduce((a, b) => a + b.scor, 0) / total).toFixed(1) : 0;
+
+          html += `
+<div class="admin-card-stu">
+
+    <div style="font-weight:bold; color:var(--primary); font-size:18px;">
+        ${acc.u}
     </div>
+
+    <div style="font-size:10px; color:#64748b;">
+        Parola: ${acc.p}
+    </div>
+
+    <div class="results-grid">
+        ${testeElev.map(function(ex, index) {
+            return `
+                <div class="score-circle ${ex.scor < 22 ? 'circle-fail' : 'circle-pass'}"
+                     onclick="toggleDetailsInstructor('${acc.u}', ${index})">
+                    ${ex.scor}
+                </div>
+            `;
+        }).join('')}
+    </div>
+
+    <div class="gauges-row">
+        <div class="gauge-col">
+            <div class="gauge-visual">${medie}</div>
+            <small>Media</small>
+        </div>
+
+        <div class="gauge-col">
+            <div class="gauge-visual">${total}</div>
+            <small>Teste</small>
+        </div>
+
+        <div class="gauge-col">
+            <div class="gauge-visual">${procent}%</div>
+            <small>Admis</small>
+        </div>
+    </div>
+
+    <div id="err-${acc.u.replace(/\s/g, '')}" class="hidden" style="
+        margin-top:10px;
+        text-align:left;
+        background:#f8fafc;
+        padding:10px;
+        border-radius:10px;
+    "></div>
+
+</div>
 `;
         }
     }
 
-    container.innerHTML = html || "Nu ai elevi";
-    return; // 🔴 FOARTE IMPORTANT
+    container.innerHTML = html;
+    return;
 }
 
-    let html = '';
+   let html = `
+<div style="
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+">
+`;
 
     // 🔥 ia toți instructorii (fără owner)
     const instructors = Object.entries(rawAc || {}).filter(([id, acc]) => {
@@ -435,13 +497,31 @@ if (!isBoss) {
 );
 
         html += `
-        <div style="padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
-            
-            <div style="font-weight:bold; cursor:pointer;" onclick="toggleList('list-${index}')">
-                ${inst.u}
-            </div>
+       <div style="
+    width:45%;
+    padding:15px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    box-sizing:border-box;
+    position:relative;
+">
 
-            <div style="font-size:12px;">Elevi: ${students.length}</div>
+<button onclick="deleteAcc('${instId}', '${inst.u}')" 
+style="position:absolute; top:10px; right:10px; border:none; background:none; cursor:pointer;">
+🗑️
+</button>
+            
+            <div style="text-align:center; cursor:pointer;" onclick="toggleList('list-${index}')">
+
+    <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">
+        ${inst.u}
+    </div>
+
+    <div style="font-size:13px; color:#555;">
+        Parola: ${inst.p || "-"} / Elevi: ${students.length}
+    </div>
+
+</div>
 
             <div id="list-${index}" style="display:none; margin-top:10px;">
                 ${students.map(([studentId, s]) => `
@@ -458,6 +538,7 @@ if (!isBoss) {
 
     container.innerHTML = html;
 }
+
 
 async function addNewAccount() {
     const u = prompt("Nume:");
@@ -534,6 +615,30 @@ function toggleDetails(sID, idx, realName) {
     if(!ex.detaliiGresele || ex.detaliiGresele.length === 0) box.innerHTML = "<div style='color:green; font-weight:bold;'>✅ Fără greșeli!</div>";
     else box.innerHTML = ex.detaliiGresele.map(g => `<div style="padding:5px; border-bottom:1px solid #eee; text-align:left; font-size:11px;"><b>Q:</b> ${g.q}<br><span style="color:red">R: ${g.r}</span> | <span style="color:green">C: ${g.c}</span></div>`).join('');
     box.classList.toggle('hidden');
+}
+function toggleDetailsInstructor(numeElev, index) {
+
+    const safeId = numeElev.replace(/\s/g, "");
+    const box = document.getElementById("err-" + safeId);
+
+    const testeElev = globalExamsData.filter(x => x.nume === numeElev);
+    const ex = testeElev[index];
+
+    if (!box) return;
+
+    if (!ex || !ex.detaliiGresele || ex.detaliiGresele.length === 0) {
+        box.innerHTML = "<div style='color:green; font-weight:bold;'>✅ Fără greșeli!</div>";
+    } else {
+        box.innerHTML = ex.detaliiGresele.map(function(g) {
+            return "<div style='padding:5px; border-bottom:1px solid #eee; font-size:11px;'>" +
+                   "<b>Q:</b> " + g.q + "<br>" +
+                   "<span style='color:red'>R: " + g.r + "</span> | " +
+                   "<span style='color:green'>C: " + g.c + "</span>" +
+                   "</div>";
+        }).join('');
+    }
+
+    box.classList.toggle("hidden");
 }
 </script>
 </body>

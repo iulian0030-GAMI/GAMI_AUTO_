@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="ro">
-<head>
+<head>f
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GAMI AUTO DRIVE - PRO CLOUD</title>
@@ -166,9 +166,24 @@ document.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !documen
 
 function triggerError(id) {
     const el = document.getElementById(id);
+
+    // 🔴 RESET ANIMAȚIE
+    el.classList.remove('shake-effect');
+    void el.offsetWidth;
     el.classList.add('shake-effect');
-    if (navigator.vibrate) navigator.vibrate(200);
-    setTimeout(() => el.classList.remove('shake-effect'), 300);
+
+    // 🔴 VIBRAȚIE (pattern mai realist)
+    if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]); // 🔥 vibrație dublă
+    }
+
+    // 🔴 FLASH ROȘU (bonus)
+    el.style.boxShadow = "0 0 20px red";
+
+    setTimeout(() => {
+        el.classList.remove('shake-effect');
+        el.style.boxShadow = "";
+    }, 300);
 }
 
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
@@ -372,7 +387,7 @@ final = shuffle(final).slice(0, 26);
 }
 
 async function loadQ() {
-   if(activePool.length === 0) {
+   if(qIndex >= totalQ) {
 
     let nonImgUsed = final.filter(x => !x.img).map(x => x.id);
 
@@ -417,12 +432,20 @@ function handleAction() {
     } else { cor++; }
     isPaused = true; document.getElementById('btn-main').innerText = "MAI DEPARTE"; document.getElementById('btn-main').style.background = "var(--success)";
     updateStats();
+if(qIndex >= totalQ) {
+    setTimeout(() => {
+        const m = cor >= 22 
+            ? `✔ ADMIS!\n\nSCOR FINAL: ${cor}` 
+            : `✖ RESPINS!\n\nSCOR FINAL: ${cor}`;
+        finalize(m);
+    }, 300);
+    return;
+}
 }
 
 function later() { 
     if(!isPaused && activePool.length > 1) { 
         activePool.push(activePool.shift()); 
-        qIndex--; // 🔴 compensăm incrementul din loadQ
         loadQ(); 
     } 
 }

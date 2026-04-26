@@ -11,6 +11,10 @@
             --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b;
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; }
+        #q-text {
+    max-height: 150px;
+    overflow-y: auto;
+}
         .hidden { display: none !important; }
         
         @keyframes shake {
@@ -31,7 +35,21 @@
         .stat-val { display: block; font-size: 18px; color: var(--primary); font-weight: 800; }
         .stat-label { font-size: 9px; color: #64748b; font-weight: bold; text-transform: uppercase; }
 
-        .q-card { background: var(--card); width: 95%; max-width: 800px; padding: 20px; border-radius: 20px; margin: 15px auto; text-align: center; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .q-card {
+    background: var(--card);
+    width: 95%;
+    max-width: 800px;
+    padding: 20px;
+    border-radius: 20px;
+    margin: 15px auto;
+    text-align: center;
+    box-sizing: border-box;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+
+    max-height: 60vh;      /* 🔴 LIMITĂ */
+    overflow-y: auto;      /* 🔴 SCROLL DOAR AICI */
+}
         .img-container { width: 100%; margin-bottom: 15px; display: none; text-align: center; }
         .img-container img { max-width: 100%; height: auto; border-radius: 12px; border: 3px solid #fbbf24; }
         
@@ -204,7 +222,7 @@ if(instructorCode === "999") {
 
     const accs = await fetchAccounts();
   const found = Object.values(accs).find(x => x.u === name && x.p === code);
-
+ 
 if(!found) { 
     alert("Date incorecte!"); 
     return; 
@@ -219,10 +237,8 @@ if (!("owner" in found)) {
     showAdmin();
     return;
 }
-
-await fetchQuestions();
-
-    const ok = await fetchQuestions();
+   const ok = await fetchQuestions();
+    
     if(!ok) return alert("Eroare date!");
 
     const p = initialPool.filter(x => x && x.q && x.a && x.b && x.c && x.ans);
@@ -230,12 +246,22 @@ await fetchQuestions();
     const norm = (txt) => (txt || "").toLowerCase().trim();;
 
 let usedGlobal = await loadUsed();
-let freshAll = initialPool.filter(x => !usedGlobal.includes(x.id));
-if (freshAll.length < 26) { usedGlobal = []; freshAll = initialPool; }
-const imgAll = freshAll.filter(x => norm(x.cat || "").includes("imagini"));
-const nonImg = freshAll.filter(x => !norm(x.cat || "").includes("imagini"));
-let final = [];
+const imgAll = initialPool.filter(x => norm(x.cat || "").includes("imagini") && x.img);
+let freshImg = imgAll.filter(x => !usedGlobal.includes(x.id));
 
+if (freshImg.length < 10) {
+    freshImg = imgAll; // 🔴 NU mai resetăm usedGlobal
+}
+// salvare DOAR imagini
+await saveUsed(usedGlobal);
+
+let nonImg = initialPool.filter(x => 
+    !norm(x.cat || "").includes("imagini") &&
+    !usedGlobal.includes(x.id)
+);
+
+let final = [];
+console.log("FINAL INIT OK");
 // 🔒 FIXE (NU INTRĂ ÎN RANDOM)
 const infr = nonImg.filter(x => norm(x.cat).includes("inf"));
 const contr = nonImg.filter(x => norm(x.cat).includes("cont"));
@@ -261,7 +287,11 @@ const randomPool = nonImg.filter(x => {
 
 // 🔥 FIXE
 // 🔥 IMAGINI (10)
-final.push(...pick(imgAll, 10));
+let selectedImg = pick(imgAll, 10);
+final.push(...selectedImg);
+
+usedGlobal.push(...selectedImg.map(x => x.id));
+await saveUsed(usedGlobal);
 final.push(...pick(mec.length ? mec : nonImg, 2));
 final.push(...pick(prim.length ? prim : nonImg, 1));
 final.push(...pick(contr.length ? contr : nonImg, 2));
@@ -273,9 +303,6 @@ final.push(...pick(remaining, 26 - final.length));
 
 // 🔥 ELIMINARE DUPLICATE
 final = final.filter((v, i, a) => a.findIndex(x => x.id === v.id) === i);
-// 🔥 salvăm întrebările folosite
-usedGlobal.push(...final.map(x => x.id));
-await saveUsed(usedGlobal);
 
 // 🔥 FIX RĂSPUNSURI (EXACT CERINȚA TA)
 const countAns = q => q.ans.replace(/\s/g, '').length;
@@ -323,7 +350,7 @@ final = shuffle(final).slice(0, 26);
 }
 
     final = shuffle(final).slice(0, 26);
-
+    console.log("FINAL LENGTH:", final.length);
     studentName = name;
     activePool = final;
 
@@ -337,17 +364,27 @@ final = shuffle(final).slice(0, 26);
     loadQ();
 }
 
-function loadQ() {
-    if(activePool.length === 0) { 
-        const m = cor >= 22 ? `✅ ADMIS! ✅\n\nSCOR FINAL: ${cor}` : `❌ RESPINS! ❌\n\nSCOR FINAL: ${cor}`;
-        finalize(m); return; 
-    }
+async function loadQ() {
+   if(activePool.length === 0) {
+
+    let nonImgUsed = final.filter(x => !x.img).map(x => x.id);
+
+    usedGlobal.push(...nonImgUsed);
+    await saveUsed(usedGlobal);
+
+    const m = cor >= 22 
+        ? `✔ ADMIS!\n\nSCOR FINAL: ${cor}` 
+        : `✖ RESPINS!\n\nSCOR FINAL: ${cor}`;
+
+    finalize(m);
+    return;
+}
     isPaused = false; sel = [];
     const btn = document.getElementById('btn-main'), q = activePool[0], imgWrap = document.getElementById('img-wrap');
     btn.innerText = "CONFIRMĂ"; btn.style.background = "var(--primary)";
     if(q.img && q.img !== "") { imgWrap.innerHTML = `<img src="${q.img}">`; imgWrap.style.display = "block"; } else { imgWrap.style.display = "none"; }
     qIndex++;
-qIndex++;
+
 document.getElementById('q-text').innerText = qIndex + ". " + q.q;
     const list = document.getElementById('opts-list'); list.innerHTML = "";
     ['A','B','C'].forEach(l => {
@@ -375,7 +412,13 @@ function handleAction() {
     updateStats();
 }
 
-function later() { if(!isPaused && activePool.length > 1) { activePool.push(activePool.shift()); loadQ(); } }
+function later() { 
+    if(!isPaused && activePool.length > 1) { 
+        activePool.push(activePool.shift()); 
+        qIndex--; // 🔴 compensăm incrementul din loadQ
+        loadQ(); 
+    } 
+}
 function updateStats() { document.getElementById('s-rem').innerText = activePool.length; document.getElementById('s-cor').innerText = cor; document.getElementById('s-gre').innerText = gre; document.getElementById('s-perc').innerText = Math.round((cor/totalQ)*100) + "%"; }
 function startTimer() { let t = 1800; timer = setInterval(() => { let m = Math.floor(t/60), s = t%60; document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`; if(t-- <= 0) finalize(`❌ TIMP EXPIRAT! ❌\n\nRESPINS. SCOR FINAL: ${cor}`); }, 1000); }
 async function finalize(m) { clearInterval(timer); await syncExamToCloud({ nume: studentName, scor: cor, greseli: gre, data: new Date().toLocaleString(), timp: document.getElementById('timer').innerText, detaliiGresele: examHistory }); alert(m); location.reload(); }

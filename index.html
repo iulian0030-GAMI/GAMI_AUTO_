@@ -10,7 +10,13 @@
             --primary: #1e3a8a; --accent: #fbbf24; --success: #22c55e;
             --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; }
+        body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg); 
+    margin: 0; 
+    color: var(--text); 
+    overflow-y: auto; 
+}
         #q-text {
     max-height: 150px;
     overflow-y: auto;
@@ -45,11 +51,8 @@
     text-align: center;
     box-sizing: border-box;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    border: 1px solid #e2e8f0;
-
-    max-height: 60vh;      /* 🔴 LIMITĂ */
-    overflow-y: auto;      /* 🔴 SCROLL DOAR AICI */
-}
+    border: 1px solid #e2e8f0;00:36 27.04.2026
+ }
         .img-container { width: 100%; margin-bottom: 15px; display: none; text-align: center; }
         .img-container img { max-width: 100%; height: auto; border-radius: 12px; border: 3px solid #fbbf24; }
         
@@ -126,6 +129,7 @@
 const DB_URL = "https://gamiautodrive-default-rtdb.europe-west1.firebasedatabase.app/";
 let initialPool = [], cor = 0, gre = 0, sel = [], examHistory = [], timer, studentName = "", activePool = [], isPaused = false;let qIndex = 0;
 let isBoss = false;
+let usedGlobal = [];
 let currentInstructor = "";
 let globalExamsData = [];
 const totalQ = 26;
@@ -245,7 +249,7 @@ if (!("owner" in found)) {
 
     const norm = (txt) => (txt || "").toLowerCase().trim();;
 
-let usedGlobal = await loadUsed();
+   usedGlobal = await loadUsed();
 const imgAll = initialPool.filter(x => norm(x.cat || "").includes("imagini") && x.img);
 let freshImg = imgAll.filter(x => !usedGlobal.includes(x.id));
 

@@ -146,9 +146,11 @@
     </div>
 </div>
     <div id="admin-grouped-content"></div>
-    <button class="btn btn-confirm" style="position:fixed; bottom:20px; left:5%; width:90%; z-index:1000;" onclick="location.reload()">IEȘIRE ADMIN</button>
-</div>
-
+   <button class="btn btn-confirm"
+style="position:fixed; bottom:20px; right:20px; width:auto; padding:10px 16px; background:#1e3a8a; color:white; border-radius:10px; z-index:1000;"
+onclick="location.reload()">
+IEȘIRE ADMIN
+</button>
 <script>
 const DB_URL = "https://gamiautodrive-default-rtdb.europe-west1.firebasedatabase.app/";
 let initialPool = [], cor = 0, gre = 0, sel = [], examHistory = [], timer, studentName = "", activePool = [], isPaused = false;let qIndex = 0;
@@ -395,7 +397,10 @@ final = shuffle(final).slice(0, 26);
     final = shuffle(final).slice(0, 26);
     console.log("FINAL LENGTH:", final.length);
     studentName = name;
-    activePool = final;
+   activePool = final;
+   for(let i = 0; i < activePool.length; i++) {
+    activePool[i].nr = i + 1;
+}
 
     qIndex = 0;
 
@@ -426,9 +431,10 @@ async function loadQ() {
     const btn = document.getElementById('btn-main'), q = activePool[0], imgWrap = document.getElementById('img-wrap');
     btn.innerText = "CONFIRMĂ"; btn.style.background = "var(--primary)";
     if(q.img && q.img !== "") { imgWrap.innerHTML = `<img src="${q.img}">`; imgWrap.style.display = "block"; } else { imgWrap.style.display = "none"; }
-    qIndex++;
+    if(isPaused) qIndex++;
 
-document.getElementById('q-text').innerText = qIndex + ". " + q.q;
+   document.getElementById('q-text').innerText = 
+q.nr + ". " + q.q;
     const list = document.getElementById('opts-list'); list.innerHTML = "";
     ['A','B','C'].forEach(l => {
         let b = document.createElement('button'); b.className = "opt-btn";

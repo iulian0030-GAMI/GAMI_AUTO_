@@ -17,12 +17,13 @@
             --primary: #1e3a8a; --accent: #fbbf24; --success: #22c55e;
             --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b;
         }
-       body { 
+      body { 
     font-family: 'Inter', sans-serif; 
     background: var(--bg); 
     margin: 0; 
     color: var(--text); 
-    overflow: hidden;   
+    overflow-x: hidden;
+}
         #q-text {
     max-height: 150px;
     overflow-y: auto;
@@ -83,6 +84,19 @@
         .circle-fail { background: var(--danger); color: white; }
         .gauges-row { display: flex; justify-content: space-around; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; }
         .gauge-visual { width: 50px; height: 50px; border-radius: 50%; border: 4px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; margin-bottom: 5px; }
+       #screen-admin {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#admin-grouped-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 120px;
+}19:23 28.04.2026
     </style>
 </head>
 <body>
@@ -120,7 +134,7 @@
     </div>
 </div>
 
-<div id="screen-admin" class="hidden" style="padding:20px; padding-bottom:100px;">
+     <div id="screen-admin" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h2 style="color:var(--primary); margin:0;">📊 CONTROL PANEL</h2>
         <button class="btn btn-confirm" onclick="addNewAccount()" style="border-radius:50%; width:45px; height:45px; font-size:24px; flex:none;">+</button>

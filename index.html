@@ -140,9 +140,9 @@
 
 <input type="text" id="stu-name" class="input-style" placeholder="Cursant / Instructor">
 
-<input type="password" id="stu-code" class="input-style" placeholder="Cod Acces">
+<input type="text" id="stu-code" class="input-style" placeholder="Cod Acces">
 
-<input type="password" id="admin-code" class="input-style" placeholder="Admin">
+<input type="text" id="stu-code" class="input-style" placeholder="Admin">
 <button class="btn btn-confirm" style="width:100%" onclick="playClick(); auth()">
     CONECTARE
 </button>
@@ -979,22 +979,22 @@ f
 }
 window.addEventListener("load", () => {
 
-    // 🔴 splash screen (ce aveai deja)
+    // 🔴 splash screen (logo)
     setTimeout(() => {
         const splash = document.getElementById("splash-screen");
         if (splash) splash.style.display = "none";
-    }, 2500);
+    }, 3000); // 3 secunde
 
-    // 🔴 AUTO LOGIN + FACE ID
+    // 🔴 AUTO LOGIN (fără Face ID)
     const savedUser = localStorage.getItem("user");
     const savedPass = localStorage.getItem("pass");
 
     if (savedUser && savedPass) {
-        document.getElementById('stu-name').value = savedUser;
-        document.getElementById('stu-code').value = savedPass;
+        document.getElementById("stu-name").value = savedUser;
+        document.getElementById("stu-code").value = savedPass;
 
-        // 🔥 pornește biometric
-        biometricLogin();
+        // 🔥 intră direct
+        auth();
     }
 
 });

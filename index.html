@@ -375,20 +375,8 @@ const prim = nonImg.filter(x => norm(x.cat).includes("prim"));
 
 // 🎯 RANDOM DOAR DIN ASTEA
 const randomPool = nonImg.filter(x => {
-    const c = norm(x.cat);
-    return (
-        c.includes("autostr") ||
-        c.includes("depasir") ||
-        c.includes("oprire") || c.includes("stationare") ||
-        c.includes("semne politist") ||
-        c.includes("ferata") ||
-        c.includes("preventiva") ||
-        c.includes("marcaje") ||
-        c.includes("indicatoare") ||
-        c.includes("prioritate") || c.includes("giratoriu") ||
-        c.includes("viteza") || c.includes("drum")
-        c.includes("ecologica") ||
-    );
+    const c = norm(x.cat || "");
+    return ALLOWED_CATEGORIES.some(k => c.includes(k));
 });
 
 // 🔥 FIXE
